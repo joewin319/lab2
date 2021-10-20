@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*
 """
-Created on Sun Sep 20 10:40:06 2020
-
-@author: haris
+Name: NG JOE WIN
+Id: 1171103090
 """
 from scipy.fft import dct, idct
 from numpy import r_
@@ -19,11 +18,10 @@ import cv2
 def computePSNR(ori, recon):
     psnr=0.0
     #Your code
-    ori=ori.astype('float64')
-    recon=recon.astype('float64')
+ 
     mse=np.mean((ori-recon)**2)
-    searchforpeak=ori**2
-    peak=np.max(searchforpeak)
+    peak=np.max(ori)
+    peak=peak**2
     psnr=10*np.log10(peak/mse)
     return psnr
       
@@ -31,28 +29,27 @@ def computePSNR(ori, recon):
 def computeSNR(ori, recon):
     snr=0.0
     #Your code
-    ori=ori.astype('float64')
-    recon=recon.astype('float64')
-    x=np.mean(ori**2)
+
+    x=np.mean((ori**2))
     mse=np.mean((ori-recon)**2)
     snr=10*np.log10(x/mse)
     return snr
 
+
 def RLencode(vec):
-    tuppleList = None
+
     # Your code 
     tuppleList=[]
     count=0
-    for i in vec[:-1]:
-        if i==0:
+    for i ,num in enumerate(vec):
+        if num==0:
             count=count+1
+            if(i==len(vec)-1):
+                tupple=(0,0)
+                tuppleList.append(tupple)
         else:
-            tuppleList.append((count,i))
+            tuppleList.append((count,num))
             count=0
-    if vec[-1]==0:
-        tuppleList.append((0,0))
-    else:
-        tuppleList.append((count,vec[-1]))
     
     return tuppleList
 
@@ -61,32 +58,49 @@ def RLencode(vec):
 def compressImage(filename, mask):
     im = readImageAsGray(filename) # convert to gray as well 
     im = resize(im,8,8) # resize to be multiple of 8 rows and col
-    dctIm=None 
-    size= None
-    dctIm=im*mask
-    size=dctIm.shape[0]*dctIm.shape[1]
+   
+    imsize=im.shape
+    dctIm=np.zeros(imsize)
+    size=0
+    for i in r_[:imsize[0]:8]:
+        for j in r_[:imsize[1]:8]:
+           m=dct2(im[i:(i+8), j:(j+8)], mask)
+           dctIm[i:(i+8), j:(j+8)]=m
+           size=size+getDataSize(m)
+    
     # Your code
+    
     return (dctIm, size)
 
 def compressImageThres(filename, thres):
     im = readImageAsGray(filename) # convert to gray as well
     im = resize(im,8,8) # resize to be multiple of 8 rows and col
-    dctIm=None 
-    size= None
-    mask=np.full((8,8), thres)
-    print(mask)
-    dctIm=im*mask
-    size=dctIm.shape[0]*dctIm.shape[1]
+     
+    imsize=im.shape
+    
+    dctIm=np.zeros(imsize)
+    size=0
+    for i in r_[:imsize[0]:8]:
+        for j in r_[:imsize[1]:8]:
+           m=dct2_thres(im[i:(i+8), j:(j+8)], thres)
+           dctIm[i:(i+8), j:(j+8)]=m
+           size=size+getDataSize(m)
     # your code
+    print('Compression by thresholding DCT coefficients values')
+    percentage_DCTcoefficients= (np.sum( dctIm != 0.0 ) / (imsize[0]*imsize[1]))*100
+    print(f"Keeping only {percentage_DCTcoefficients}% of the DCT coefficients")
     return (dctIm, size)
+
 
 
 def unCompressImage(dctIm):
     imsize = dctIm.shape
     imRecon = np.zeros(imsize)
-    imRecon=None 
     #your code
-            
+    for i in r_[:imsize[0]:8]:
+        for j in r_[:imsize[1]:8]:
+            imRecon[i:(i+8),j:(j+8)] = idct2( dctIm[i:(i+8),j:(j+8)] )
+    
     return imRecon
 
 
@@ -322,6 +336,7 @@ mask3 =np.array([[1, 1, 0, 0, 0, 0, 0, 0],
                   
                  ]
                )
+
 mask6 = np.array([[1, 1, 1, 0, 0, 0, 0, 0],
                   [1, 1, 0, 0, 0, 0, 0, 0],
                   [1, 0, 0, 0, 0, 0, 0, 0],
@@ -345,4 +360,3 @@ mask21=np.array([[1, 1, 1, 1, 1, 1, 0, 0],
                   
                  ]
                )
-
